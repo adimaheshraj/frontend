@@ -4,10 +4,15 @@ import { Link } from 'react-router-dom';
 const Home = () => {
   return (
     <div>
-      <h1>CITIZEN MENS TAILORS</h1>
-      <p>Bhongir, Yadadri Bhongir</p>
-      <Link to="/register">Register</Link>
-      <Link to="/login">Login</Link>
+      <section className="hero">
+        <h1>Citizen Mens Tailors</h1>
+        <p>Welcome to Citizen Tailors - Bhongir, Yadadri Bhongir</p>
+        <p>Expert tailoring services for suits, shirts, pants, and more. Quality craftsmanship since day one.</p>
+        <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+          <Link to="/register" className="btn">Get Started</Link>
+          <Link to="/login" className="btn btn-secondary">Login</Link>
+        </div>
+      </section>
     </div>
   );
 };

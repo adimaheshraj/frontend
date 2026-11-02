@@ -2,49 +2,65 @@ import React, { useState } from 'react';
 import axios from 'axios';
 
 const Register = () => {
-  const [form, setForm] = useState({ name: '', phone: '', email: '' });
-  const [otp, setOtp] = useState('');
+  const [form, setForm] = useState({ name: '', phone: '', email: '', otp: '' });
   const [step, setStep] = useState(1); // 1: register, 2: verify
+  const [uniqueId, setUniqueId] = useState('');
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleRegister = async () => {
+  const handleRegister = async (e) => {
+    e.preventDefault();
     try {
       const res = await axios.post('http://localhost:8080/api/auth/register', form);
-      alert('OTP sent');
+      setUniqueId(res.data.uniqueId);
       setStep(2);
     } catch (err) {
-      alert('Error');
+      alert('Registration failed');
     }
   };
 
-  const handleVerify = async () => {
+  const handleVerify = async (e) => {
+    e.preventDefault();
     try {
-      const res = await axios.post('http://localhost:8080/api/auth/verify-otp', { phone: form.phone, otp });
+      const res = await axios.post('http://localhost:8080/api/auth/verify-otp', { phone: form.phone, otp: form.otp });
       localStorage.setItem('token', res.data.token);
-      alert('Registered');
       window.location.href = '/dashboard';
     } catch (err) {
-      alert('Invalid OTP');
+      alert('OTP verification failed');
     }
   };
 
   return (
-    <div>
+    <div className="form-container">
       {step === 1 ? (
-        <div>
-          <input name="name" placeholder="Name" onChange={handleChange} />
-          <input name="phone" placeholder="Phone" onChange={handleChange} />
-          <input name="email" placeholder="Email" onChange={handleChange} />
-          <button onClick={handleRegister}>Register</button>
-        </div>
+        <form onSubmit={handleRegister}>
+          <h2>Register</h2>
+          <div className="form-group">
+            <label>Name</label>
+            <input name="name" placeholder="Name" onChange={handleChange} required />
+          </div>
+          <div className="form-group">
+            <label>Phone</label>
+            <input name="phone" placeholder="Phone" onChange={handleChange} required />
+          </div>
+          <div className="form-group">
+            <label>Email</label>
+            <input name="email" type="email" placeholder="Email" onChange={handleChange} required />
+          </div>
+          <button type="submit" className="btn">Register</button>
+        </form>
       ) : (
-        <div>
-          <input placeholder="OTP" onChange={(e) => setOtp(e.target.value)} />
-          <button onClick={handleVerify}>Verify</button>
-        </div>
+        <form onSubmit={handleVerify}>
+          <h2>Verify OTP</h2>
+          <p>Unique ID: {uniqueId}</p>
+          <div className="form-group">
+            <label>OTP</label>
+            <input name="otp" placeholder="OTP" onChange={handleChange} required />
+          </div>
+          <button type="submit" className="btn">Verify</button>
+        </form>
       )}
     </div>
   );

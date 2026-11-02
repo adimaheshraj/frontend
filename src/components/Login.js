@@ -2,49 +2,62 @@ import React, { useState } from 'react';
 import axios from 'axios';
 
 const Login = () => {
-  const [phone, setPhone] = useState('');
+  const [form, setForm] = useState({ username: '', password: '', phone: '' });
   const [isAdmin, setIsAdmin] = useState(false);
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
 
-  const handleCustomerLogin = async () => {
-    try {
-      const res = await axios.post('http://localhost:8080/api/auth/login', { phone });
-      localStorage.setItem('token', res.data.token);
-      alert('Logged in');
-      window.location.href = '/dashboard';
-    } catch (err) {
-      alert('Invalid credentials');
-    }
+  const handleChange = (e) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleAdminLogin = async () => {
+  const handleLogin = async (e) => {
+    e.preventDefault();
     try {
-      const res = await axios.post('http://localhost:8080/api/admin/login', { username, password });
+      let res;
+      if (isAdmin) {
+        const { username, password } = form;
+        res = await axios.post('http://localhost:8080/api/auth/admin-login', { username, password });
+      } else {
+        res = await axios.post('http://localhost:8080/api/auth/login', { phone: form.phone });
+      }
       localStorage.setItem('token', res.data.token);
-      localStorage.setItem('role', 'admin');
-      alert('Admin logged in');
-      window.location.href = '/admin';
+      localStorage.setItem('role', isAdmin ? 'admin' : 'customer');
+      window.location.href = isAdmin ? '/admin' : '/dashboard';
     } catch (err) {
-      alert('Invalid credentials');
+      alert('Login failed');
     }
   };
 
   return (
-    <div>
-      <button onClick={() => setIsAdmin(!isAdmin)}>Switch to {isAdmin ? 'Customer' : 'Admin'}</button>
-      {isAdmin ? (
-        <div>
-          <input placeholder="Username" onChange={(e) => setUsername(e.target.value)} />
-          <input type="password" placeholder="Password" onChange={(e) => setPassword(e.target.value)} />
-          <button onClick={handleAdminLogin}>Admin Login</button>
-        </div>
-      ) : (
-        <div>
-          <input placeholder="Phone" onChange={(e) => setPhone(e.target.value)} />
-          <button onClick={handleCustomerLogin}>Customer Login</button>
-        </div>
-      )}
+    <div className="form-container">
+      <h2>Login</h2>
+      <div className="radio-group">
+        <label>
+          <input type="radio" name="role" checked={!isAdmin} onChange={() => setIsAdmin(false)} /> Customer
+        </label>
+        <label>
+          <input type="radio" name="role" checked={isAdmin} onChange={() => setIsAdmin(true)} /> Admin
+        </label>
+      </div>
+      <form onSubmit={handleLogin}>
+        {isAdmin ? (
+          <>
+            <div className="form-group">
+              <label>Username</label>
+              <input name="username" placeholder="Username" onChange={handleChange} required />
+            </div>
+            <div className="form-group">
+              <label>Password</label>
+              <input name="password" type="password" placeholder="Password" onChange={handleChange} required />
+            </div>
+          </>
+        ) : (
+          <div className="form-group">
+            <label>Phone</label>
+            <input name="phone" placeholder="Phone" onChange={handleChange} required />
+          </div>
+        )}
+        <button type="submit" className="btn">Login</button>
+      </form>
     </div>
   );
 };

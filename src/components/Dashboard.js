@@ -2,78 +2,109 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
 const Dashboard = () => {
-  const [orders, setOrders] = useState([]);
-  const [form, setForm] = useState({ pants: 0, shirts: 0, suits: 0, kurtas: 0, others: '' });
+  const [items, setItems] = useState({ pants: 0, shirts: 0, suits: 0, kurtas: 0, others: '' });
   const [photos, setPhotos] = useState([]);
+  const [orders, setOrders] = useState([]);
+
+  const token = localStorage.getItem('token');
 
   useEffect(() => {
     fetchOrders();
   }, []);
 
+  const handleChange = (e) => {
+    setItems({ ...items, [e.target.name]: e.target.value });
+  };
+
+  const handlePhotoChange = (e) => {
+    setPhotos(Array.from(e.target.files));
+  };
+
+  const createOrder = async (e) => {
+    e.preventDefault();
+    const formData = new FormData();
+    formData.append('pants', items.pants);
+    formData.append('shirts', items.shirts);
+    formData.append('suits', items.suits);
+    formData.append('kurtas', items.kurtas);
+    if (items.others) formData.append('others', items.others);
+    photos.forEach(photo => formData.append('photos', photo));
+
+    try {
+      await axios.post('http://localhost:8080/api/customer/order', formData, {
+        headers: { Authorization: `Bearer ${token}` },
+        contentType: false,
+        processData: false
+      });
+      alert('Order created');
+      fetchOrders();
+    } catch (err) {
+      alert('Order creation failed');
+    }
+  };
+
   const fetchOrders = async () => {
     try {
-      const token = localStorage.getItem('token');
       const res = await axios.get('http://localhost:8080/api/customer/orders', {
         headers: { Authorization: `Bearer ${token}` }
       });
       setOrders(res.data);
     } catch (err) {
-      alert('Error fetching orders');
+      alert('Failed to fetch orders');
     }
   };
 
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  };
-
-  const handleFileChange = (e) => {
-    setPhotos(e.target.files);
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    const data = new FormData();
-    data.append('pants', form.pants);
-    data.append('shirts', form.shirts);
-    data.append('suits', form.suits);
-    data.append('kurtas', form.kurtas);
-    data.append('others', form.others);
-    for (let i = 0; i < photos.length; i++) {
-      data.append('photos', photos[i]);
-    }
-
-    try {
-      const token = localStorage.getItem('token');
-      await axios.post('http://localhost:8080/api/customer/order', data, {
-        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
-      });
-      alert('Order created');
-      fetchOrders();
-    } catch (err) {
-      alert('Error creating order');
-    }
+  const logout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('role');
+    window.location.href = '/';
   };
 
   return (
-    <div>
-      <h2>Customer Dashboard</h2>
-      <form onSubmit={handleSubmit}>
-        <input type="number" name="pants" placeholder="Pants" onChange={handleChange} />
-        <input type="number" name="shirts" placeholder="Shirts" onChange={handleChange} />
-        <input type="number" name="suits" placeholder="Suits" onChange={handleChange} />
-        <input type="number" name="kurtas" placeholder="Kurtas" onChange={handleChange} />
-        <input name="others" placeholder="Others" onChange={handleChange} />
-        <input type="file" multiple onChange={handleFileChange} />
-        <button type="submit">Create Order</button>
+    <div className="card">
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+        <h2>Customer Dashboard</h2>
+        <button onClick={logout} className="btn btn-secondary">Logout</button>
+      </div>
+      <form onSubmit={createOrder} className="card">
+        <h3>Create Order</h3>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
+          <div className="form-group">
+            <label>Pants</label>
+            <input name="pants" type="number" placeholder="Pants" onChange={handleChange} min="0" />
+          </div>
+          <div className="form-group">
+            <label>Shirts</label>
+            <input name="shirts" type="number" placeholder="Shirts" onChange={handleChange} min="0" />
+          </div>
+          <div className="form-group">
+            <label>Suits</label>
+            <input name="suits" type="number" placeholder="Suits" onChange={handleChange} min="0" />
+          </div>
+          <div className="form-group">
+            <label>Kurtas</label>
+            <input name="kurtas" type="number" placeholder="Kurtas" onChange={handleChange} min="0" />
+          </div>
+          <div className="form-group">
+            <label>Others</label>
+            <input name="others" placeholder="Others" onChange={handleChange} />
+          </div>
+          <div className="form-group">
+            <label>Photos</label>
+            <input type="file" multiple onChange={handlePhotoChange} />
+          </div>
+        </div>
+        <button type="submit" className="btn">Create Order</button>
       </form>
       <h3>Your Orders</h3>
-      <ul>
+      <div className="orders-list">
         {orders.map(order => (
-          <li key={order.id}>
-            Pants: {order.items.pants}, Shirts: {order.items.shirts}, Photos: {order.photoUrls.length}
-          </li>
+          <div key={order.id} className="card">
+            <p><strong>Items:</strong> {JSON.stringify(order.items)}</p>
+            <p><strong>Photos:</strong> {order.photoUrls.join(', ')}</p>
+          </div>
         ))}
-      </ul>
+      </div>
     </div>
   );
 };
